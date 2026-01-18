@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.Date;
 import java.util.Map;
 
@@ -40,6 +41,19 @@ public class JwtService {
 
     public String extractSubject(String token) {
         return extractAllClaims(token).getSubject();
+    }
+
+    public UUID extractUserId(String token) {
+        Object uid = extractAllClaims(token).get("uid");
+        if (uid == null) {
+            return null;
+        }
+
+        try {
+            return UUID.fromString(uid.toString());
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     public boolean isTokenValid(String token) {

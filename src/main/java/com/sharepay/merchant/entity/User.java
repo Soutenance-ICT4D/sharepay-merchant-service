@@ -1,5 +1,7 @@
 package com.sharepay.merchant.entity;
 
+import com.sharepay.merchant.entity.enums.AuthProvider;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

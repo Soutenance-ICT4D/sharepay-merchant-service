@@ -1,6 +1,6 @@
 package com.sharepay.merchant.repository;
 
-import com.sharepay.merchant.entity.AuthProvider;
+import com.sharepay.merchant.entity.enums.AuthProvider;
 import com.sharepay.merchant.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
