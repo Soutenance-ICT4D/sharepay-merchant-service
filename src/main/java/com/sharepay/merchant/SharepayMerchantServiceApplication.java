@@ -12,12 +12,6 @@ public class SharepayMerchantServiceApplication {
 				.filename(".env.local")
 				.ignoreIfMissing()
 				.load();
-		if (dotenv.entries().isEmpty()) {
-			dotenv = Dotenv.configure()
-					.filename(".env")
-					.ignoreIfMissing()
-					.load();
-		}
 		dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
 
 		SpringApplication.run(SharepayMerchantServiceApplication.class, args);

@@ -13,6 +13,7 @@ import java.util.UUID;
 public class AppResponse {
     private final UUID id;
     private final String name;
+    private final String description;
     private final AppEnvironment environment;
     private final AppStatus status;
     private final String webhookUrl;

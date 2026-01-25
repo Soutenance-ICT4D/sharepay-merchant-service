@@ -57,7 +57,7 @@ eureka:
   instance:
     prefer-ip-address: true
     # ID unique combinant nom, IP et port pour éviter les conflits de registre
-    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+    instance-id: ${spring.application.name}:${random.value}
     # Rythme cardiaque plus rapide pour une détection de panne réactive
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
@@ -70,6 +70,10 @@ application:
       expiration: ${JWT_EXPIRATION_MS:3600000} # 1h par défaut
       refresh-token:
         expiration: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 jours par défaut
+
+  payment-links:
+    base-url: ${PAY_BASE_URL:http://localhost:3000}
+    crypto-key-base64: ${PAY_LINK_CRYPTO_KEY_BASE64}
 
 # --- LOGGING ---
 logging:

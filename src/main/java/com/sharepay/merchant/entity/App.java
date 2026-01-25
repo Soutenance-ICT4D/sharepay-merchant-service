@@ -11,6 +11,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +21,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -38,6 +41,9 @@ public class App {
     @Column(nullable = false, length = 120)
     private String name;
 
+     @Column(nullable = false, length = 255)
+     private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private AppEnvironment environment = AppEnvironment.SANDBOX;
@@ -56,4 +62,16 @@ public class App {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+     @OneToMany(mappedBy = "app")
+     private Set<ApiKey> apiKeys;
+
+     @OneToOne(mappedBy = "app")
+     private Wallet wallet;
+
+     @OneToMany(mappedBy = "app")
+     private Set<PaymentLink> paymentLinks;
+
+     @OneToMany(mappedBy = "app")
+     private Set<Transaction> transactions;
 }
