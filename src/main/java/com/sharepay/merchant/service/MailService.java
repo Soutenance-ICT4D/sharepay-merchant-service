@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.MailTransportException;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -60,13 +59,6 @@ public class MailService {
                     "mail.auth_failed",
                     "Erreur d'authentification SMTP lors de l'envoi de l'email"
             );
-        } catch (MailTransportException ex) {
-            log.error("Mail transport failed (network/ports/TLS): to='{}', subject='{}'", to, subject, ex);
-            throw new BusinessException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "mail.transport_failed",
-                    "Erreur réseau/TLS lors de l'envoi de l'email"
-            );
         } catch (MailSendException ex) {
             log.error("Mail send failed (SMTP rejected message): to='{}', subject='{}'", to, subject, ex);
             throw new BusinessException(
@@ -75,11 +67,29 @@ public class MailService {
                     "Erreur lors de l'envoi de l'email"
             );
         } catch (MailException ex) {
-            log.error("Mail exception occurred: to='{}', subject='{}'", to, subject, ex);
+            Throwable root = ex;
+            while (root.getCause() != null && root.getCause() != root) {
+                root = root.getCause();
+            }
+
+            String rootType = root.getClass().getName();
+            String rootMessage = root.getMessage();
+            log.error("Mail exception occurred: to='{}', subject='{}', rootType='{}', rootMessage='{}'", to, subject, rootType, rootMessage, ex);
+
+            String messageKey = "mail.send_failed";
+            String message = "Erreur lors de l'envoi de l'email";
+            if (rootType.contains("SSL") || rootType.contains("Handshake")) {
+                messageKey = "mail.tls_failed";
+                message = "Erreur TLS lors de l'envoi de l'email";
+            } else if (rootType.contains("UnknownHost") || rootType.contains("Connect") || rootType.contains("Timeout")) {
+                messageKey = "mail.transport_failed";
+                message = "Erreur réseau lors de l'envoi de l'email";
+            }
+
             throw new BusinessException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "mail.send_failed",
-                    "Erreur lors de l'envoi de l'email"
+                    messageKey,
+                    message
             );
         } catch (Exception ex) {
             log.error("Unexpected error while sending mail: to='{}', subject='{}'", to, subject, ex);
