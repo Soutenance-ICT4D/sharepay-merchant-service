@@ -57,7 +57,7 @@ eureka:
   instance:
     prefer-ip-address: true
     # ID unique combinant nom, IP et port pour éviter les conflits de registre
-    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+    instance-id: ${spring.application.name}:${random.value}
     # Rythme cardiaque plus rapide pour une détection de panne réactive
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
