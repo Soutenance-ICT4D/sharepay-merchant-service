@@ -31,6 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/merchants/auth/**").permitAll()
                         .requestMatchers("/api/v1/merchants/health").permitAll()
+                        .requestMatchers("/api/v1/payment-links/public/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

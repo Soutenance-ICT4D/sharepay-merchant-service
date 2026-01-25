@@ -8,10 +8,12 @@ import com.sharepay.merchant.dto.request.auth.ResetPasswordRequest;
 import com.sharepay.merchant.dto.request.auth.VerifyEmailRequest;
 import com.sharepay.merchant.dto.request.auth.VerifyResetOtpRequest;
 import com.sharepay.merchant.dto.response.AuthResponse;
+import com.sharepay.merchant.entity.App;
 import com.sharepay.merchant.entity.RefreshToken;
 import com.sharepay.merchant.entity.User;
 import com.sharepay.merchant.entity.enums.AuthProvider;
 import com.sharepay.merchant.exception.BusinessException;
+import com.sharepay.merchant.repository.AppRepository;
 import com.sharepay.merchant.repository.UserRepository;
 import com.sharepay.merchant.security.JwtService;
 import org.slf4j.Logger;
@@ -36,6 +38,7 @@ public class AuthService {
     }
 
     private final UserRepository userRepository;
+    private final AppRepository appRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final JwtService jwtService;
@@ -43,12 +46,14 @@ public class AuthService {
 
     public AuthService(
             UserRepository userRepository,
+            AppRepository appRepository,
             PasswordEncoder passwordEncoder,
             MailService mailService,
             JwtService jwtService,
             RefreshTokenService refreshTokenService
     ) {
         this.userRepository = userRepository;
+        this.appRepository = appRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
         this.jwtService = jwtService;
@@ -90,6 +95,7 @@ public class AuthService {
         issueOtp(user, OtpPurpose.VERIFY_EMAIL);
     }
 
+    @Transactional
     public void verifyEmail(VerifyEmailRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(
@@ -99,6 +105,13 @@ public class AuthService {
                 ));
 
         if (user.isVerified()) {
+            if (appRepository.countByOwnerUser_Id(user.getId()) == 0) {
+                App app = new App();
+                app.setOwnerUser(user);
+                app.setName("Default");
+                app.setDescription("Default application");
+                appRepository.save(app);
+            }
             return;
         }
 
@@ -107,6 +120,14 @@ public class AuthService {
         user.setVerified(true);
         clearOtp(user);
         userRepository.save(user);
+
+        if (appRepository.countByOwnerUser_Id(user.getId()) == 0) {
+            App app = new App();
+            app.setOwnerUser(user);
+            app.setName("Default");
+            app.setDescription("Default application");
+            appRepository.save(app);
+        }
     }
 
     public AuthResponse login(LoginRequest request) {

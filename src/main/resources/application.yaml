@@ -71,6 +71,10 @@ application:
       refresh-token:
         expiration: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 jours par défaut
 
+  payment-links:
+    base-url: ${PAY_BASE_URL:http://localhost:3000}
+    crypto-key-base64: ${PAY_LINK_CRYPTO_KEY_BASE64}
+
 # --- LOGGING ---
 logging:
   level:

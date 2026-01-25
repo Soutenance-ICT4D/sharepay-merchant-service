@@ -7,14 +7,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -38,6 +41,9 @@ public class User {
 
     @Column(length = 20)
     private String phone;
+
+     @Column(nullable = false, length = 20)
+     private String role = "MERCHANT";
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -64,4 +70,14 @@ public class User {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+     @UpdateTimestamp
+     @Column(name = "updated_at")
+     private Instant updatedAt;
+
+     @OneToMany(mappedBy = "ownerUser")
+     private Set<App> apps;
+
+     @OneToMany(mappedBy = "user")
+     private Set<RefreshToken> refreshTokens;
 }
