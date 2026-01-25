@@ -1,21 +1,35 @@
 server:
-  port: ${SERVER_PORT}
+  port: ${PORT:8081}
+  error:
+    include-message: always
 
 spring:
   application:
     name: sharepay-merchant-service
 
+  # --- BASE DE DONNÉES ---
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 10
 
+  # --- PERSISTENCE ---
   jpa:
     hibernate:
-      ddl-auto: update
+      # 'update' en dev, 'validate' est recommandé en production
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: false
     open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
 
+  # --- ENVOI DE MAILS ---
   mail:
     host: smtp.gmail.com
     port: 587
@@ -27,20 +41,40 @@ spring:
           auth: true
           starttls:
             enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
+# --- DISCOVERY (EUREKA) ---
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL}
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    # Permet de retenter la connexion à Eureka s'il est temporairement indisponible
+    fetch-registry: true
+    register-with-eureka: true
   instance:
     prefer-ip-address: true
+    # ID unique combinant nom, IP et port pour éviter les conflits de registre
+    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+    # Rythme cardiaque plus rapide pour une détection de panne réactive
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
 
+# --- SÉCURITÉ & MÉTIER ---
 application:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
-      expiration: ${JWT_EXPIRATION_MS}
+      expiration: ${JWT_EXPIRATION_MS:3600000} # 1h par défaut
       refresh-token:
-        expiration: ${JWT_REFRESH_EXPIRATION_MS}
+        expiration: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 jours par défaut
+
+# --- LOGGING ---
+logging:
+  level:
+    root: INFO
+    com.sharepay: DEBUG # On log ton code en mode Debug pour le développement
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
