@@ -20,6 +20,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleBusiness(BusinessException ex) {
+        log.warn("BusinessException: status={}, messageKey={}, message={}", ex.getStatus(), ex.getMessageKey(), ex.getMessage(), ex);
         return ResponseEntity.status(ex.getStatus())
                 .body(ApiResponse.failure(ex.getMessageKey(), ex.getMessage(), Map.of()));
     }
