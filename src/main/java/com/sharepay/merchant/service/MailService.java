@@ -57,14 +57,14 @@ public class MailService {
             throw new BusinessException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "mail.auth_failed",
-                    "Erreur d'authentification SMTP lors de l'envoi de l'email"
+                    "Erreur lors de l'envoi de l'email: authentification SMTP échouée (vérifier App Password)"
             );
         } catch (MailSendException ex) {
             log.error("Mail send failed (SMTP rejected message): to='{}', subject='{}'", to, subject, ex);
             throw new BusinessException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "mail.send_failed",
-                    "Erreur lors de l'envoi de l'email"
+                    "Erreur lors de l'envoi de l'email: SMTP a rejeté le message"
             );
         } catch (MailException ex) {
             Throwable root = ex;
@@ -77,13 +77,14 @@ public class MailService {
             log.error("Mail exception occurred: to='{}', subject='{}', rootType='{}', rootMessage='{}'", to, subject, rootType, rootMessage, ex);
 
             String messageKey = "mail.send_failed";
-            String message = "Erreur lors de l'envoi de l'email";
+            String description = safeDescription(root);
+            String message = "Erreur lors de l'envoi de l'email" + (description.isBlank() ? "" : ": " + description);
             if (rootType.contains("SSL") || rootType.contains("Handshake")) {
                 messageKey = "mail.tls_failed";
-                message = "Erreur TLS lors de l'envoi de l'email";
+                message = "Erreur lors de l'envoi de l'email: problème TLS/SSL" + (description.isBlank() ? "" : " (" + description + ")");
             } else if (rootType.contains("UnknownHost") || rootType.contains("Connect") || rootType.contains("Timeout")) {
                 messageKey = "mail.transport_failed";
-                message = "Erreur réseau lors de l'envoi de l'email";
+                message = "Erreur lors de l'envoi de l'email: problème réseau" + (description.isBlank() ? "" : " (" + description + ")");
             }
 
             throw new BusinessException(
@@ -96,9 +97,37 @@ public class MailService {
             throw new BusinessException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "mail.unexpected_error",
-                    "Erreur inattendue lors de l'envoi de l'email"
+                    "Erreur lors de l'envoi de l'email: erreur inattendue"
             );
         }
+    }
+
+    private String safeDescription(Throwable t) {
+        if (t == null) {
+            return "";
+        }
+
+        String type = t.getClass().getSimpleName();
+        String msg = t.getMessage();
+        if (msg == null) {
+            msg = "";
+        }
+
+        String cleaned = msg
+                .replace("\r", " ")
+                .replace("\n", " ")
+                .trim();
+
+        int max = 120;
+        if (cleaned.length() > max) {
+            cleaned = cleaned.substring(0, max) + "...";
+        }
+
+        if (cleaned.isBlank()) {
+            return type;
+        }
+
+        return type + ": " + cleaned;
     }
 
     private String buildVerifyEmailHtml(String otpCode) {
