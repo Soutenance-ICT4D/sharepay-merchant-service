@@ -2,14 +2,22 @@ package com.sharepay.merchant.service;
 
 import com.sharepay.merchant.exception.BusinessException;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailSendException;
+import org.springframework.mail.MailTransportException;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MailService {
+
+    private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
     private final JavaMailSender mailSender;
     private final String from;
@@ -35,6 +43,7 @@ public class MailService {
     }
 
     private void sendHtml(String to, String subject, String html) {
+        log.info("Mail send attempt: to='{}', subject='{}', from='{}'", to, subject, from);
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -43,11 +52,41 @@ public class MailService {
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(mimeMessage);
-        } catch (Exception ex) {
+            log.info("Mail sent successfully: to='{}', subject='{}'", to, subject);
+        } catch (MailAuthenticationException ex) {
+            log.error("Mail authentication failed (check SMTP username/password or Gmail App Password): to='{}', subject='{}'", to, subject, ex);
+            throw new BusinessException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "mail.auth_failed",
+                    "Erreur d'authentification SMTP lors de l'envoi de l'email"
+            );
+        } catch (MailTransportException ex) {
+            log.error("Mail transport failed (network/ports/TLS): to='{}', subject='{}'", to, subject, ex);
+            throw new BusinessException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "mail.transport_failed",
+                    "Erreur réseau/TLS lors de l'envoi de l'email"
+            );
+        } catch (MailSendException ex) {
+            log.error("Mail send failed (SMTP rejected message): to='{}', subject='{}'", to, subject, ex);
             throw new BusinessException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "mail.send_failed",
                     "Erreur lors de l'envoi de l'email"
+            );
+        } catch (MailException ex) {
+            log.error("Mail exception occurred: to='{}', subject='{}'", to, subject, ex);
+            throw new BusinessException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "mail.send_failed",
+                    "Erreur lors de l'envoi de l'email"
+            );
+        } catch (Exception ex) {
+            log.error("Unexpected error while sending mail: to='{}', subject='{}'", to, subject, ex);
+            throw new BusinessException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "mail.unexpected_error",
+                    "Erreur inattendue lors de l'envoi de l'email"
             );
         }
     }
